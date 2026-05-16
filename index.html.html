@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All In One Express - Voucher Entry & Print</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- Form Styling (On-Screen View) --- */
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #6366f1;
+            --success: #10b981;
+            --success-dark: #059669;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
+            --border-color: #e2e8f0;
+            --radius: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        
+        body { 
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 24px 24px;
+            color: var(--text-dark); 
+            line-height: 1.5;
+            padding: 20px 15px 100px 15px; 
+        }
+
+        .container { max-width: 600px; margin: 0 auto; position: relative; }
+        
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            border-radius: var(--radius);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        header h2 { 
+            font-size: 22px; 
+            font-weight: 800; 
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card { 
+            background: var(--card-bg); 
+            padding: 24px; 
+            border-radius: var(--radius); 
+            box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.03);
+            margin-bottom: 20px; 
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        h3 { 
+            font-size: 14px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            color: var(--text-light); 
+            margin-bottom: 18px; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+            font-weight: 700;
+        }
+
+        h3 i { color: var(--primary-light); }
+
+        .form-group { margin-bottom: 18px; position: relative; }
+        
+        label { 
+            display: block; 
+            font-size: 13px; 
+            font-weight: 600; 
+            margin-bottom: 8px; 
+            color: var(--text-dark); 
+        }
+
+        .input-wrapper { position: relative; }
+        .input-wrapper i {
+            position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+            color: var(--text-light); font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%; padding: 14px 14px 14px 45px; 
+            border: 1.5px solid var(--border-color); border-radius: 12px;
+            font-size: 15px; background: #f8fafc; color: var(--text-dark); font-weight: 500;
+        }
+
+        input[type="date"], select { padding-left: 15px; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); background: #fff; outline: none; }
+
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        .total-card {
+            background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
+            color: white; border: none;
+        }
+
+        .total-card label { color: rgba(255,255,255,0.9); }
+        
+        .total-display { font-size: 32px; font-weight: 800; color: #fff; margin-top: 5px; }
+
+        .btn {
+            width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); 
+            color: white; border: none; padding: 18px; border-radius: 14px; font-size: 17px; font-weight: 700; cursor: pointer;
+            box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);
+        }
+
+        /* --- မူရင်း VOUCHER TEMPLATE ဒီဇိုင်း (Screen ပေါ်တွင် ပုံမှန်ဆိုလျှင် ဝှက်ထားမည်) --- */
+        #voucher-print-area {
+            display: none;
+        }
+
+        /* ကော်ပီကူးထားသော မူရင်း Voucher ရဲ့ CSS အတိအကျ */
+        .voucher { width:4in; height:6in; margin:auto; background:#fff; border:1px solid #000; overflow:hidden; color:#000; position: relative; font-family: Pyidaungsu, Arial, Helvetica, sans-serif; }
+        .header { padding:6px 8px 4px; }
+        .top { display:flex; align-items:center; justify-content:center; gap:7px; }
+        .logo { width:35px; height:35px; object-fit:contain; }
+        .company { font-size:17px; font-weight:700; letter-spacing:0.2px; text-transform: none; color: #000; margin: 0; }
+        .date { margin-top:10px; margin-bottom:5px; font-size:13px; font-weight:700; white-space: nowrap; }
+        .office { margin-top:5px; padding-top:5px; text-align: left; }
+        .office-line { display:flex; margin-bottom:4px; font-size:10px; line-height:1.3; }
+        .office-label { width:70px; font-weight:bold; }
+        .office-text { flex:1; }
+        .section-title { border-top:0.5px solid #000; border-bottom:0.5px solid #000; text-align:center; font-size:11px; font-weight:700; padding:3px 0; background: transparent; color: #000; letter-spacing: normal; }
+        .note-title { border-top:1px solid #000; border-bottom:1px solid #000; text-align:center; font-size:12px; font-weight:700; padding:1px 0; }
+        .content { padding:7px 8px; font-size:13px; text-align: left; }
+        .info-row { display:flex; margin-bottom:5px; }
+        .label { width:68px; text-align:right; padding-right:8px; font-weight:bold; color: #000; display: block; }
+        .value { flex:1; text-align: left; }
+        .receiver-address-box { min-height: 50px; }
+        .price-table { border-top:1px solid #000; border-bottom:1px solid #000; }
+        .price-row { display:flex; min-height:20px; border-bottom:1px dashed #777; }
+        .price-left { width:78px; border-right:1px solid #000; display:flex; align-items:center; justify-content:flex-end; padding-right:8px; font-size:12px; font-weight:bold; }
+        .price-middle { flex:1; display:flex; align-items:center; padding-left:8px; font-size:13px; font-weight:bold; white-space: nowrap; }
+        .price-right { width:105px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; }
+        .total-row { display:flex; min-height:30px; border-top:1px solid #000; }
+        .total-left { width:78px; border-right:1px solid #000; display:flex; align-items:center; justify-content:flex-end; padding-right:8px; font-size:15px; font-weight:700; }
+        .total-right { flex:1; display:flex; align-items:center; padding-left:10px; font-size:16px; font-weight:700; white-space: nowrap; }   
+        .footer { height:50px; display: flex; justify-content: center; align-items: center; }
+        .footer-title { text-align:center; font-size:24px; font-weight:500; }
+
+        /* --- PRINT MODE CSS (စနစ်တကျ ပြင်ဆင်ပြီးသား အပိုင်း) --- */
+        @media print {
+            #form-container {
+                display: none !important; /* Entry Form ကိုပဲ ဖျောက်ထားမည် */
+            }
+            #voucher-print-area {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .voucher {
+                border: none !important;
+            }
+            @page { size: 4in 6in; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="form-container">
+        <header>
+            <h2>ALL IN ONE Voucher</h2>
+        </header>
+
+        <div class="card">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>VOUCHER DATE</label>
+                <input type="date" id="date">
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fa-solid fa-paper-plane"></i> Sender Information</h3>
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-user"></i>
+                    <input type="text" id="sender_name" placeholder="Sender Name">
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <input type="text" id="sender_address" placeholder="Township / City">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fa-solid fa-user-check"></i> Receiver Information</h3>
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-user"></i>
+                    <input type="text" id="receiver_name" placeholder="Receiver Name">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-phone"></i>
+                    <input type="tel" id="receiver_phone" placeholder="Receiver Phone">
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <div class="input-wrapper">
+                    <textarea id="receiver_address" rows="2" placeholder="Full Address" style="padding-left:15px;"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3><i class="fa-solid fa-wallet"></i> Payment Details</h3>
+            <div class="row">
+                <div class="form-group">
+                    <label>COD Amount (K)</label>
+                    <input type="number" id="cod" value="0" oninput="calculateTotal()" onfocus="if(this.value=='0')this.value=''">
+                </div>
+                <div class="form-group">
+                    <label>Deli Fee (K)</label>
+                    <input type="number" id="deli_fee" value="0" oninput="calculateTotal()" onfocus="if(this.value=='0')this.value=''">
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="form-group">
+                    <label>Fee Status</label>
+                    <select id="deli_status" onchange="calculateTotal()">
+                        <option value="UNPAID">Unpaid (မပေးရသေး)</option>
+                        <option value="PAID">Paid (ပေးပြီး)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <select id="payment_method">
+                        <option value="Receiver Pay">Receiver Pay</option>
+                        <option value="Sender Pay">Sender Pay</option>
+                        <option value="-">-</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row" style="margin-bottom: 0;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Note (မှတ်ချက်)</label>
+                    <input type="text" id="note" placeholder="Write something...">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>Font Size</label>
+                    <select id="note_size">
+                        <option value="11px">Small</option>
+                        <option value="13px" selected>Normal</option>
+                        <option value="16px">Large</option>
+                        <option value="20px">X-Large</option>
+                        <option value="24px">Huge</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="card total-card">
+            <label>TOTAL TO COLLECT</label>
+            <div id="total_display_val" class="total-display">0 K</div>
+            <input type="hidden" id="total_display" value="0 K">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <button class="btn" onclick="generateAndPrintVoucher()">
+                <i class="fa-solid fa-print"></i> SAVE & PRINT VOUCHER
+            </button>
+        </div>
+    </div>
+
+
+    <div id="voucher-print-area">
+        <div class="voucher">
+            <div class="header">
+                <div class="top">
+                    <img src="logo.png" class="logo" alt="Logo">   
+                    <div class="company">ALL IN ONE EXPRESS</div>
+                </div>
+                <div class="date">Date : <span id="print_date"></span></div>
+                <div class="office">
+                    <div class="office-line">
+                        <div class="office-label">MDY Office:</div>
+                        <div class="office-text">No.Nga-6/93, 62A, between 109 & 109B, Mandalay. <br> 09-889988856</div>
+                    </div>
+                    <div class="office-line">
+                        <div class="office-label">YGN Office:</div>
+                        <div class="office-text">No.280, Corner of Du Yar St. & Ba La Min Htin St, 50 ward, North Dagon, Yangon.</div>
+                    </div>
+                </div>
+            </div>
+            <div class="section-title">SENDER</div>
+            <div class="content">
+                <div class="info-row"><div class="label">Name:</div><div class="value" id="print_sender_name"></div></div>
+                <div class="info-row"><div class="label">Address:</div><div class="value" id="print_sender_address"></div></div>
+            </div>
+            <div class="section-title">RECEIVER</div>
+            <div class="content">
+                <div class="info-row"><div class="label">Name:</div><div class="value" id="print_receiver_name" style="font-weight: bold;"></div></div>
+                <div class="info-row"><div class="label">Phone:</div><div class="value" id="print_receiver_phone" style="font-weight: bold;"></div></div>
+                <div class="info-row"><div class="label">Address:</div><div class="value receiver-address-box" id="print_receiver_address"></div></div>
+            </div>
+            <div class="price-table">
+                <div class="price-row">
+                    <div class="price-left">COD:</div>
+                    <div class="price-middle"><span id="print_cod"></span> K</div>
+                </div>
+                <div class="price-row">
+                    <div class="price-left">Deli Fee:</div>
+                    <div class="price-middle"><span id="print_deli_fee"></span> <span id="print_deli_status"></span></div>
+                    <div class="price-right" id="print_payment_method"></div>
+                </div>
+                <div class="total-row">
+                    <div class="total-left">Total:</div>
+                    <div class="total-right"><span id="print_total"></span> K</div>
+                </div>
+            </div>
+            <div class="note-title">မှတ်ချက်</div>
+            <div class="footer">
+                <div class="footer-title" id="print_note"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // စုစုပေါင်း ငွေပမာဏ တွက်ချက်ခြင်း
+        function calculateTotal() {
+            const cod = parseFloat(document.getElementById('cod').value) || 0;
+            const deli = parseFloat(document.getElementById('deli_fee').value) || 0;
+            const status = document.getElementById('deli_status').value;
+            
+            let total = cod;
+            if (status === "UNPAID") {
+                total = cod + deli;
+            }
+            
+            const formattedTotal = total.toLocaleString() + " K";
+            document.getElementById('total_display_val').innerText = formattedTotal;
+            document.getElementById('total_display').value = formattedTotal;
+        }
+
+        // Form ဖြည့်ပြီးချိန်တွင် Print စနစ်ကို ခေါ်ယူခြင်း
+        function generateAndPrintVoucher() {
+            const rName = document.getElementById('receiver_name').value;
+            const rPhone = document.getElementById('receiver_phone').value;
+
+            if(!rName || !rPhone) {
+                alert("⚠️ ကျေးဇူးပြု၍ လက်ခံမည့်သူ၏ အမည်နှင့် ဖုန်းနံပါတ်ကို ထည့်သွင်းပေးပါ။");
+                return;
+            }
+
+            // Input တွေထဲက တန်ဖိုးများကို Voucher Template ထဲသို့ အစားထိုးထည့်သွင်းခြင်း
+            let dateVal = document.getElementById('date').value;
+            if(dateVal) {
+                const d = new Date(dateVal);
+                dateVal = ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2) + "/" + d.getFullYear();
+            } else {
+                const d = new Date();
+                dateVal = ("0" + d.getDate()).slice(-2) + "/" + ("0" + (d.getMonth() + 1)).slice(-2) + "/" + d.getFullYear();
+            }
+            
+            document.getElementById('print_date').innerText = dateVal;
+            document.getElementById('print_sender_name').innerText = document.getElementById('sender_name').value || "-";
+            document.getElementById('print_sender_address').innerText = document.getElementById('sender_address').value || "-";
+            document.getElementById('print_receiver_name').innerText = rName;
+            document.getElementById('print_receiver_phone').innerText = rPhone;
+            document.getElementById('print_receiver_address').innerText = document.getElementById('receiver_address').value || "-";
+            
+            const codAmt = parseFloat(document.getElementById('cod').value) || 0;
+            const deliAmt = parseFloat(document.getElementById('deli_fee').value) || 0;
+            document.getElementById('print_cod').innerText = codAmt.toLocaleString();
+            document.getElementById('print_deli_fee').innerText = deliAmt.toLocaleString();
+            
+            const status = document.getElementById('deli_status').value;
+            document.getElementById('print_deli_status').innerText = (status === "UNPAID") ? "K" : "PAID";
+            document.getElementById('print_payment_method').innerText = document.getElementById('payment_method').value;
+            
+            let total = codAmt;
+            if (status === "UNPAID") { total = codAmt + Math.abs(deliAmt); }
+            document.getElementById('print_total').innerText = total.toLocaleString();
+
+            // မှတ်ချက်နှင့် စာလုံးအကြီးအသေး သတ်မှတ်ချက်
+            const noteElement = document.getElementById('print_note');
+            noteElement.innerText = document.getElementById('note').value || "";
+            noteElement.style.fontSize = document.getElementById('note_size').value;
+
+            // ဖုန်းရဲ့ Browser ကနေ Native Print Box ခေါ်ထုတ်ခြင်း
+            setTimeout(() => {
+                window.print();
+            }, 300);
+        }
+
+        // စာမျက်နှာ စဖွင့်ချိန်တွင် ယနေ့ရက်စွဲ အလိုအလျောက် သတ်မှတ်ခြင်း
+        window.onload = () => { 
+            document.getElementById('date').valueAsDate = new Date(); 
+            calculateTotal();
+        };
+    </script>
+</body>
+</html>
