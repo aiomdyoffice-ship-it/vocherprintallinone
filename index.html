@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All In One Express - Live Network Scanner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --primary: #4f46e5;
+            --success: #10b981;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body {
+            background-color: var(--bg-color); color: var(--text-main);
+            display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px;
+        }
+        .scanner-container {
+            max-width: 450px; width: 100%; background: var(--card-bg); border-radius: 20px; padding: 30px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.05); text-align: center;
+        }
+        .scan-status-icon { font-size: 45px; color: var(--primary); margin-bottom: 15px; }
+        h2 { font-size: 22px; font-weight: 800; margin-bottom: 5px; }
+        .subtitle { color: var(--text-sub); font-size: 13px; margin-bottom: 25px; }
+        
+        /* Progress Bar ဒီဇိုင်း */
+        .progress-container { background: #334155; border-radius: 10px; height: 8px; width: 100%; margin-bottom: 25px; overflow: hidden; display: none; }
+        .progress-bar { background: var(--primary); height: 100%; width: 0%; transition: width 0.1s ease; }
+
+        .server-group { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; text-align: left; }
+        .server-card {
+            background: #273549; border: 2px solid var(--success); border-radius: 12px; padding: 16px;
+            display: flex; align-items: center; justify-content: space-between; text-decoration: none; color: var(--text-main);
+            transition: transform 0.2s;
+        }
+        .server-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(16, 185, 129, 0.2); }
+        .server-info { display: flex; align-items: center; gap: 15px; }
+        .server-icon { font-size: 24px; color: var(--success); }
+        .name-ip b { display: block; font-size: 15px; margin-bottom: 2px; }
+        .name-ip span { font-size: 12px; color: var(--text-sub); font-family: monospace; }
+        .go-btn { background: var(--success); color: white; padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+
+        .btn-scan {
+            background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 10px;
+            font-weight: 600; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-scan:disabled { opacity: 0.5; cursor: not-allowed; }
+        .no-server { color: var(--text-sub); font-size: 14px; padding: 20px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="scanner-container">
+        <div class="scan-status-icon" id="status-icon">
+            <i class="fa-solid fa-satellite-dish"></i>
+        </div>
+        <h2 id="status-title">WiFi Print Scanner</h2>
+        <p class="subtitle" id="status-desc">လုပ်ငန်းခွင် WiFi အတွင်းရှိ Live Server များကို ရှာဖွေမည်</p>
+
+        <div class="progress-container" id="progress-box">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <div class="server-group" id="live-servers">
+            <p class="no-server">စတင်ရှာဖွေရန် အောက်က Scan ခလုတ်ကို နှိပ်ပါ သို့မဟုတ် Auto Scan ကို စောင့်ပါ</p>
+        </div>
+
+        <button class="btn-scan" id="scan-btn" onclick="startNetworkScan()">
+            <i class="fa-solid fa-magnifying-glass" id="btn-icon"></i> <span id="btn-text">Start Auto Scan</span>
+        </button>
+    </div>
+
+    <script>
+        const PORT = "5000"; // Flask Server Port
+        
+        // ဖုန်းကိုယ်တိုင် မိနေတဲ့ WiFi ရဲ့ IP Range (Subnet) ကို ဆွဲထုတ်ဖို့ ကြိုးစားခြင်း
+        // အွန်လိုင်းကနေ Local IP တန်းသိဖို့ ခက်ခဲတဲ့အတွက် အရိုးရှင်းဆုံးနဲ့ အဖြစ်နိုင်ဆုံး Local IP Range တွေကို Auto ဆောက်ပြီး ပတ်ရှာပါမယ်
+        async function startNetworkScan() {
+            const listContainer = document.getElementById('live-servers');
+            const progressBox = document.getElementById('progress-box');
+            const progressBar = document.getElementById('progress-bar');
+            const scanBtn = document.getElementById('scan-btn');
+            const btnIcon = document.getElementById('btn-icon');
+            const btnText = document.getElementById('btn-text');
+            const statusIcon = document.getElementById('status-icon');
+            const statusTitle = document.getElementById('status-title');
+
+            // UI ပြင်ဆင်ခြင်း
+            scanBtn.disabled = true;
+            btnIcon.className = "fa-solid fa-circle-notch fa-spin";
+            btnText.innerText = "Scanning Network...";
+            statusIcon.innerHTML = "<i class='fa-solid fa-spinner fa-spin' style='color:#6366f1;'></i>";
+            statusTitle.innerText = "Scanning WiFi...";
+            listContainer.innerHTML = "";
+            progressBox.style.display = "block";
+            progressBar.style.width = "0%";
+
+            // 💡 အိမ်သုံး/ရုံးသုံး WiFi တွေမှာ အသုံးအများဆုံးဖြစ်တဲ့ Subnet range နှစ်ခုလုံးကို (1.x ကော 0.x ကော) 
+            // ၁ ကနေ ၂၅၄ အထိ IP ပေါင်း ၅၀၀ ကျော်ကို Background ကနေ စက္ကန့်ပိုင်းအတွင်း တပြိုင်တည်း ပိုက်စိပ်တိုက် စစ်မှာဖြစ်ပါတယ်
+            let ipList = [];
+            for (let i = 1; i <= 254; i++) {
+                ipList.push(`192.168.1.${i}`);
+                ipList.push(`192.168.0.${i}`);
+            }
+
+            let foundCount = 0;
+            let checkedCount = 0;
+            const totalIPs = ipList.length;
+
+            // စက္ကန့်ပိုင်းအတွင်း ပြီးအောင် Batch ပုံစံ ခွဲစစ်ခြင်း (တပြိုင်တည်းအလုံး ၅၀ စီ စစ်မည်)
+            const batchSize = 50;
+            
+            for (let i = 0; i < totalIPs; i += batchSize) {
+                const batch = ipList.slice(i, i + batchSize);
+                
+                const promises = batch.map(ip => {
+                    const url = `http://${ip}:${PORT}`;
+                    
+                    // Timeout ကို ဝ.၇ စက္ကန့်ပဲ ပေးထားလို့ Server မရှိတဲ့ IP ဆို ချက်ချင်း ကျော်သွားမှာပါ (အလွန်မြန်ဆန်စေရမယ်)
+                    return fetch(url, { mode: 'no-cors', signal: AbortSignal.timeout(700) })
+                        .then(() => {
+                            foundCount++;
+                            // တကယ် Server run ထားတာ တွေ့ရင် HTML ကတ်ပြား ချက်ချင်းဆောက်ပြီး တိုးထည့်မယ်
+                            const card = document.createElement('a');
+                            card.href = url;
+                            card.className = "server-card";
+                            card.innerHTML = `
+                                <div class="server-info">
+                                    <div class="server-icon"><i class="fa-solid fa-laptop-code"></i></div>
+                                    <div class="name-ip">
+                                        <b>All In One Active Server</b>
+                                        <span>${ip}:${PORT}</span>
+                                    </div>
+                                </div>
+                                <div class="go-btn">Connect <i class="fa-solid fa-arrow-right"></i></div>
+                            `;
+                            listContainer.appendChild(card);
+                        })
+                        .catch(() => { /* offline ဖြစ်လျှင် ကျော်မည် */ })
+                        .finally(() => {
+                            checkedCount++;
+                            // Progress bar တိုးမြှင့်ခြင်း
+                            const percent = Math.round((checkedCount / totalIPs) * 100);
+                            progressBar.style.width = percent + "%";
+                        });
+                });
+
+                await Promise.all(promises);
+            }
+
+            // Scan ပြီးဆုံးချိန် UI ပြန်ပြင်ခြင်း
+            scanBtn.disabled = false;
+            btnIcon.className = "fa-solid fa-magnifying-glass";
+            btnText.innerText = "Re-Scan Network";
+            progressBox.style.display = "none";
+
+            if (foundCount > 0) {
+                statusIcon.innerHTML = "<i class='fa-solid fa-circle-check' style='color:#10b981;'></i>";
+                statusTitle.innerText = `Found ${foundCount} Active Server(s)`;
+                document.getElementById('status-desc').style.display = "none";
+            } else {
+                statusIcon.innerHTML = "<i class='fa-solid fa-triangle-exclamation' style='color:#ef4444;'></i>";
+                statusTitle.innerText = "No Server Found";
+                listContainer.innerHTML = "<p class='no-server'>🔴 WiFi အတွင်းမှာ တကယ် Run ထားတဲ့ Flask Server (Port 5000) လုံးဝ ရှာမတွေ့ပါ။ Laptop တွင် Server ဖွင့်ထားကြောင်း သေချာပါစေ။</p>";
+            }
+        }
+
+        // စာမျက်နှာ ပွင့်တာနဲ့ ဇာတ်တိုက် Auto Scan တန်းဖတ်ခိုင်းခြင်း
+        window.onload = startNetworkScan;
+    </script>
+</body>
+</html>
